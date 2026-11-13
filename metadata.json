@@ -1,0 +1,8 @@
+{
+  "name": "Remix Magdana Atelier \u0026 Color Studio",
+  "description": "Магдана Гаджиева — Hair & color master. Авторское окрашивание, точные стрижки, укладки и реконструкция волос SPA Master.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
