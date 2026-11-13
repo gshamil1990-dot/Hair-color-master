@@ -36,6 +36,7 @@ import {
   MASTER_PHONE_DISPLAY,
   MASTER_PHONE_TEL
 } from './utils/telegram.ts';
+import { useAuth } from './context/AuthContext.tsx';
 
 export type ActiveTab = 'overview' | 'coloring' | 'haircuts' | 'care' | 'hairstyles';
 
@@ -49,6 +50,7 @@ export interface BookingSelection {
 const TAB_ORDER: ActiveTab[] = ['overview', 'coloring', 'haircuts', 'care', 'hairstyles'];
 
 export default function App() {
+  const { user, savedBookings, signInWithGoogle, saveBookingToCloud } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [slideDirection, setSlideDirection] = useState<'right' | 'left'>('right');
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -404,7 +406,18 @@ export default function App() {
                 href={buildTelegramMasterUrl(bookingMessageText)}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => openTelegramMasterChat(bookingMessageText, e)}
+                onClick={(e) => {
+                  if (user) {
+                    void saveBookingToCloud({
+                      serviceTitle: selectedServiceForBooking?.title || 'Индивидуальная консультация',
+                      serviceCategory: selectedServiceForBooking?.category || 'Запись к мастеру',
+                      servicePrice: selectedServiceForBooking?.price || 'По запросу',
+                      wearTime: selectedServiceForBooking?.wearTime,
+                      contactChannel: 'telegram',
+                    });
+                  }
+                  openTelegramMasterChat(bookingMessageText, e);
+                }}
                 className="flex items-center justify-between p-4 rounded-xl border border-[#2AABEE]/45 bg-[#2AABEE]/12 text-[#FAF6F0] hover:bg-[#2AABEE]/20 hover:border-[#2AABEE] transition-all group"
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -428,7 +441,18 @@ export default function App() {
                 href={buildWhatsAppMasterUrl(bookingMessageText)}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => openExternalUrl(buildWhatsAppMasterUrl(bookingMessageText), e)}
+                onClick={(e) => {
+                  if (user) {
+                    void saveBookingToCloud({
+                      serviceTitle: selectedServiceForBooking?.title || 'Индивидуальная консультация',
+                      serviceCategory: selectedServiceForBooking?.category || 'Запись к мастеру',
+                      servicePrice: selectedServiceForBooking?.price || 'По запросу',
+                      wearTime: selectedServiceForBooking?.wearTime,
+                      contactChannel: 'whatsapp',
+                    });
+                  }
+                  openExternalUrl(buildWhatsAppMasterUrl(bookingMessageText), e);
+                }}
                 className="flex items-center justify-between p-4 rounded-xl border border-[#25D366]/35 bg-[#141110] text-[#25D366] hover:bg-[#25D366]/10 transition-all group"
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -461,6 +485,45 @@ export default function App() {
                 <ArrowUpRight className="w-4 h-4 text-[#D9A773] shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </a>
             </div>
+
+            {user ? (
+              savedBookings.length > 0 && (
+                <div className="mb-5 p-3.5 rounded-xl bg-[#141110] border border-[#2E2620]">
+                  <div className="text-[11px] font-medium text-[#D9A773] mb-2">
+                    История ваших обращений ({savedBookings.length})
+                  </div>
+                  <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
+                    {savedBookings.slice(0, 3).map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between text-xs text-[#C8BFB2] py-1 border-b border-[#241E1A] last:border-b-0"
+                      >
+                        <span className="truncate pr-2">{item.serviceTitle}</span>
+                        <span className="text-[11px] text-[#8C8276] font-mono tabular-nums shrink-0">
+                          {item.servicePrice}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="mb-5 flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141110] border border-[#2E2620]">
+                <span className="text-xs text-[#A89F91]">
+                  Войдите, чтобы сохранять историю записей и Паспорт волос в профиле
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticImpact('light');
+                    void signInWithGoogle();
+                  }}
+                  className="shrink-0 px-3 py-1.5 rounded-lg border border-[#D9A773]/40 bg-[#D9A773]/10 text-[#FAF6F0] hover:bg-[#D9A773]/20 text-xs font-medium transition-colors"
+                >
+                  Войти
+                </button>
+              </div>
+            )}
 
             <div className="pt-4 border-t border-[#2E2620] text-xs text-[#A89F91] leading-relaxed">
               Прием в студии ведется по предварительной записи. Выберите удобный способ связи — Магдана поможет подобрать точную формулу под ваши волосы.
